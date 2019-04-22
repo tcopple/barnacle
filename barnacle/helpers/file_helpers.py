@@ -6,10 +6,12 @@ import logging
 import json
 import itertools
 
+from barnacle.config import BarnacleConfig
+
 class FileHelpers(object):
 
     log = logging.getLogger(__name__)
-    config_path = "config.json"
+    CONFIG = BarnacleConfig
 
     @classmethod
     def download_file(cls, remote_path, local_path):
@@ -26,16 +28,6 @@ class FileHelpers(object):
             shutil.copyfileobj(response, local)
 
         cls.log.info("Success...")
-
-    @classmethod
-    def app_root(cls):
-        if(cls.CONFIG == None):
-            if os.path.exists(cls.config_path):
-                cls.log.info("Loading configuration file [{}]".format(cls.config_path))
-                with open(cls.config_path, 'rt') as f:
-                    cls.CONFIG = json.load(f)
-
-        return cls.CONFIG["DIR_ROOT"] if "DIR_ROOT" in cls.CONFIG else "./"
 
     @classmethod
     def change_file_extension(cls, filepath, new_suffix):
@@ -74,14 +66,3 @@ class FileHelpers(object):
     @classmethod
     def remove_extension(cls, filename):
         return os.path.splitext(filename)[0]
-
-    def setup_config(filepath, log):
-        ret = {}
-        if os.path.exists(filepath):
-            log.info("Loading configuration file [{}]".format(filepath))
-            with open(filepath, 'rt') as f:
-                ret = json.load(f)
-
-        return ret
-
-    CONFIG = setup_config(config_path, log)

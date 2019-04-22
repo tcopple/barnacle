@@ -6,9 +6,9 @@ import sys
 import logging
 import pandas
 import os
-from services.openfigi_service import OpenFigiService
-from helpers.file_helpers import FileHelpers
-from helpers.logging_helpers import LoggingHelper
+from barnacle.services.openfigi_service import OpenFigiService
+from barnacle.helpers.file_helpers import FileHelpers
+from barnacle.helpers.logging_helpers import LoggingHelper
 
 ##ENTRY POINT
 if __name__ == '__main__':

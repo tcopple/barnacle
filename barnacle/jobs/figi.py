@@ -7,13 +7,15 @@ import logging
 import pandas
 import os
 import luigi
-from services.openfigi_service import OpenFigiService
-from helpers.file_helpers import FileHelpers
-from helpers.logging_helpers import LoggingHelper
+from barnacle.services.openfigi_service import OpenFigiService
+from barnacle.helpers.file_helpers import FileHelpers
+from barnacle.helpers.logging_helpers import LoggingHelper
+from barnacle.config import BarnacleConfig
+
 
 class FetchCompanyInfo(luigi.Task):
-    FIGIS_PATH = FileHelpers.CONFIG["PATH_FIGI_DETAILS"]
-    FIGIS_MISSING_PATH = FileHelpers.CONFIG["PATH_FIGI_MISSING"]
+    FIGIS_PATH = BarnacleConfig.PATH_FIGI_DETAILS
+    FIGIS_MISSING_PATH = BarnacleConfig.PATH_FIGI_MISSING
 
     cusip = luigi.Parameter(default="")
 

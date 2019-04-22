@@ -1,8 +1,8 @@
 import re
-from models.holding import Holding
-from models.portfolio import Portfolio
-from models.transaction import Transaction
-from helpers.file_helpers import FileHelpers
+from barnacle.models.holding import Holding
+from barnacle.models.portfolio import Portfolio
+from barnacle.models.transaction import Transaction
+from barnacle.helpers.file_helpers import FileHelpers
 from xml.etree import ElementTree
 import numpy
 import xmltodict
