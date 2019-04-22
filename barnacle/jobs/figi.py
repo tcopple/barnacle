@@ -27,7 +27,7 @@ class FetchCompanyInfo(luigi.Task):
     def run(self):
         response = OpenFigiService.get_figi(self.cusip)[0]
 
-        if("error" in response):
+        if "error" in response:
             dat = jsonpickle.encode({}, unpicklable=False)
         else:
             dat = jsonpickle.encode(response["data"][0], unpicklable=False)

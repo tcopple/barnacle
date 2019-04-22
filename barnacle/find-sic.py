@@ -6,7 +6,7 @@ from pprint import pprint
 from bs4 import BeautifulSoup
 
 ##ENTRY POINT
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     data = [["company", "cik", "sic"]]
 
@@ -15,14 +15,16 @@ if __name__ == '__main__':
     suffixes = suffixes | set(["uv", "wxyz", "123"])
 
     for suffix in sorted(suffixes):
-        url = "https://www.sec.gov/divisions/corpfin/organization/cfia-" + suffix + ".htm"
-        print('Processing [', url, '].')
+        url = (
+            "https://www.sec.gov/divisions/corpfin/organization/cfia-" + suffix + ".htm"
+        )
+        print("Processing [", url, "].")
         with urllib.request.urlopen(url) as html:
             soup = BeautifulSoup(html.read())
-            table = soup.find('table', id="cos")
-            rows = table.findAll('tr')
+            table = soup.find("table", id="cos")
+            rows = table.findAll("tr")
             for row in rows:
-                cells = row.find_all('td')
+                cells = row.find_all("td")
                 rows = [ele.text.strip() for ele in cells]
                 data.append([ele for ele in rows if ele])
 

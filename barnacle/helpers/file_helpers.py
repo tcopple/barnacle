@@ -17,15 +17,17 @@ class FileHelpers(object):
     @classmethod
     def download_file(cls, remote_path, local_path):
         cls.log.info("Downloading file from [%s] to [%s]", remote_path, local_path)
-        #if directory of local path does not exist, create it
+        # if directory of local path does not exist, create it
         path = os.path.dirname(local_path)
 
         if not os.path.exists(path):
             cls.log.info("Making directory [%s]", path)
             os.makedirs(path)
 
-        #fetch remote file storying it piecewise to local file
-        with urllib.request.urlopen(remote_path) as response, open(local_path, 'wb') as local:
+        # fetch remote file storying it piecewise to local file
+        with urllib.request.urlopen(remote_path) as response, open(
+            local_path, "wb"
+        ) as local:
             shutil.copyfileobj(response, local)
 
         cls.log.info("Success...")
@@ -54,13 +56,17 @@ class FileHelpers(object):
     @classmethod
     def make_fixed_width_parser(cls, fieldwidths):
         cuts = tuple(cut for cut in itertools.accumulate(abs(fw) for fw in fieldwidths))
-        pads = tuple(fw < 0 for fw in fieldwidths) # bool values for padding fields
-        flds = tuple(itertools.zip_longest(pads, (0,)+cuts, cuts))[:-1]  # ignore final one
+        pads = tuple(fw < 0 for fw in fieldwidths)  # bool values for padding fields
+        flds = tuple(itertools.zip_longest(pads, (0,) + cuts, cuts))[
+            :-1
+        ]  # ignore final one
         parser = lambda line: tuple(line[i:j] for pad, i, j in flds if not pad)
 
         # optional informational function attributes
         parser.size = sum(abs(fw) for fw in fieldwidths)
-        parser.fmtstring = ' '.join('{}{}'.format(abs(fw), 'x' if fw < 0 else 's') for fw in fieldwidths)
+        parser.fmtstring = " ".join(
+            "{}{}".format(abs(fw), "x" if fw < 0 else "s") for fw in fieldwidths
+        )
 
         return parser
 

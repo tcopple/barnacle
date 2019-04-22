@@ -28,12 +28,15 @@ class FetchSECIndex(BaseTask):
 
     def run(self):
         remote_path = "{}{}/{}/form.idx".format(self.URL_BASE, self.year, self.quarter)
-        output = urllib.request.urlopen(remote_path).read().decode('utf-8')
-        with self.output().open('w') as handle:
+        output = urllib.request.urlopen(remote_path).read().decode("utf-8")
+        with self.output().open("w") as handle:
             print(output, file=handle)
 
     def output(self):
-        return luigi.LocalTarget("{}/{}{}.idx".format(self.FILINGS_PATH, self.year, self.quarter))
+        return luigi.LocalTarget(
+            "{}/{}{}.idx".format(self.FILINGS_PATH, self.year, self.quarter)
+        )
+
 
 ### 020
 class ParseAllSECFilings(luigi.WrapperTask):
@@ -44,26 +47,27 @@ class ParseAllSECFilings(luigi.WrapperTask):
         for fh in files:
             yield ParseSECFiling(fh)
 
+
 class ParseSECFiling(luigi.Task):
     CSVS_PATH = BarnacleConfig.PATH_FILINGS_CSVS
     filepath = luigi.Parameter()
 
     def run(self):
         csv_lines = [["form", "company", "sic", "date", "path"]]
-        with open(self.filepath, encoding='utf-8', errors='replace') as fh:
+        with open(self.filepath, encoding="utf-8", errors="replace") as fh:
             lines_buffer = fh.readlines()
 
-            #drop first 10 lines cause they're a constant header
+            # drop first 10 lines cause they're a constant header
             del lines_buffer[:10]
 
-            #parse fields as fixed width fields
+            # parse fields as fixed width fields
             fieldwidths = (12, 62, 12, 12, 43)
             for line in lines_buffer:
                 parser = self.make_parser(fieldwidths)
-                fields = [field.strip(' ') for field in parser(line)]
+                fields = [field.strip(" ") for field in parser(line)]
                 csv_lines.append(fields)
 
-        with self.output().open('w') as handle:
+        with self.output().open("w") as handle:
             writer = csv.writer(handle)
             writer.writerows(csv_lines)
 
@@ -73,15 +77,20 @@ class ParseSECFiling(luigi.Task):
 
     def make_parser(self, fieldwidths):
         cuts = tuple(cut for cut in itertools.accumulate(abs(fw) for fw in fieldwidths))
-        pads = tuple(fw < 0 for fw in fieldwidths) # bool values for padding fields
-        flds = tuple(itertools.zip_longest(pads, (0,)+cuts, cuts))[:-1]  # ignore final one
+        pads = tuple(fw < 0 for fw in fieldwidths)  # bool values for padding fields
+        flds = tuple(itertools.zip_longest(pads, (0,) + cuts, cuts))[
+            :-1
+        ]  # ignore final one
         parser = lambda line: tuple(line[i:j] for pad, i, j in flds if not pad)
 
         # optional informational function attributes
         parser.size = sum(abs(fw) for fw in fieldwidths)
-        parser.fmtstring = ' '.join('{}{}'.format(abs(fw), 'x' if fw < 0 else 's') for fw in fieldwidths)
+        parser.fmtstring = " ".join(
+            "{}{}".format(abs(fw), "x" if fw < 0 else "s") for fw in fieldwidths
+        )
 
         return parser
+
 
 ### 030
 class DownloadFiling(luigi.ExternalTask):
@@ -92,12 +101,13 @@ class DownloadFiling(luigi.ExternalTask):
         pass
 
     def run(self):
-        output = urllib.request.urlopen(self.remote_path).read().decode('utf-8')
-        with self.output().open('w') as handle:
+        output = urllib.request.urlopen(self.remote_path).read().decode("utf-8")
+        with self.output().open("w") as handle:
             print(output, file=handle)
 
     def output(self):
         return luigi.LocalTarget(self.local_path)
+
 
 class DownloadFilings(luigi.Task):
     CSVS_PATH = luigi.Parameter(default=BarnacleConfig.PATH_FILINGS_CSVS)
@@ -114,7 +124,7 @@ class DownloadFilings(luigi.Task):
     def run(self):
         frames = []
         for fh in self.input():
-            with fh.open('r') as in_file:
+            with fh.open("r") as in_file:
                 frame = pandas.read_csv(in_file, index_col=None)
 
                 if self.filing_type:
@@ -130,8 +140,22 @@ class DownloadFilings(luigi.Task):
 
         combined = pandas.concat(frames)
         for index, row in combined.iterrows():
-            filename = "{}-{}".format(row["date"].replace("-", ""), row["form"].replace("/", ""))
-            company_path = str(int(row["sic"])) + "-" + row["company"][0:10].lower().replace(" ", "").replace("/", "").replace("&", "").replace("(", "").replace(")", "").replace(".", "").replace(",", "")
+            filename = "{}-{}".format(
+                row["date"].replace("-", ""), row["form"].replace("/", "")
+            )
+            company_path = (
+                str(int(row["sic"]))
+                + "-"
+                + row["company"][0:10]
+                .lower()
+                .replace(" ", "")
+                .replace("/", "")
+                .replace("&", "")
+                .replace("(", "")
+                .replace(")", "")
+                .replace(".", "")
+                .replace(",", "")
+            )
             local_path = os.path.join(self.REPORTS_PATH, company_path, filename)
             remote_path = "https://www.sec.gov/Archives/{}".format(row["path"])
 
@@ -140,7 +164,8 @@ class DownloadFilings(luigi.Task):
     def output(self):
         pass
 
-#040
+
+# 040
 class GenerateHoldings(luigi.WrapperTask):
     REPORTS_PATH = BarnacleConfig.PATH_COMPANY_REPORTS
     TRANSACTIONS_PATH = BarnacleConfig.PATH_COMPANY_HOLDINGS
@@ -150,6 +175,7 @@ class GenerateHoldings(luigi.WrapperTask):
         files = glob.glob(self.file_mask)
         for filepath in files:
             yield GenerateHolding(filepath)
+
 
 class GenerateHolding(luigi.Task):
     REPORTS_PATH = BarnacleConfig.PATH_COMPANY_REPORTS
@@ -161,8 +187,10 @@ class GenerateHolding(luigi.Task):
         return FileOutputTask(self.input_file)
 
     def run(self):
-        transactions = [["date", "type", "cusip", "size", "name", "asset", "allocation"]]
-        with self.input().open('r') as in_file:
+        transactions = [
+            ["date", "type", "cusip", "size", "name", "asset", "allocation"]
+        ]
+        with self.input().open("r") as in_file:
             holdings = in_file.read()
 
         portfolio_lhs = Portfolio([])
@@ -172,25 +200,29 @@ class GenerateHolding(luigi.Task):
             portfolio_holdings = PortfolioService.make_from_table(holdings)
 
         data = jsonpickle.encode(portfolio_holdings)
-        with self.output().open('w') as fh:
+        with self.output().open("w") as fh:
             fh.write(json.dumps(json.loads(data), indent=4))
 
     def output(self):
         output_date = os.path.basename(self.input_file)[0:8]
         output_filename = "{}.holdings.json".format(output_date)
-        output_filepath = os.path.dirname(self.input_file).replace(self.REPORTS_PATH, self.TRANSACTIONS_PATH)
+        output_filepath = os.path.dirname(self.input_file).replace(
+            self.REPORTS_PATH, self.TRANSACTIONS_PATH
+        )
 
         transaction_filepath = os.path.join(output_filepath, output_filename)
         return luigi.LocalTarget(transaction_filepath)
 
-#050
+
+# 050
 class GenerateAllTransactions(luigi.WrapperTask):
     REPORTS_PATH = BarnacleConfig.PATH_COMPANY_REPORTS
     TRANSACTIONS_PATH = BarnacleConfig.PATH_TRANSACTIONS
 
     def requires(self):
-        #filing_combinations = [(None, self.input()[0])] + list(zip(self.input()[0:-1], self.input()[1:]))
+        # filing_combinations = [(None, self.input()[0])] + list(zip(self.input()[0:-1], self.input()[1:]))
         pass
+
 
 class GenerateTransactions(luigi.Task):
     TRANSACTIONS_PATH = BarnacleConfig.PATH_TRANSACTIONS
@@ -201,7 +233,9 @@ class GenerateTransactions(luigi.Task):
         return [FileOutputTask(self.lhs_filepath), FileOutputTask(self.rhs_filepath)]
 
     def run(self):
-        transactions = [["date", "type", "cusip", "size", "name", "asset", "allocation"]]
+        transactions = [
+            ["date", "type", "cusip", "size", "name", "asset", "allocation"]
+        ]
         lhs_filepath = self.input()[0]
         rhs_filepath = self.input()[1]
 
@@ -216,13 +250,25 @@ class GenerateTransactions(luigi.Task):
 
         for transaction in PortfolioService.transform(holdings_lhs, holdings_rhs):
             date = os.path.basename(rhs_filepath.fn)[0:8]
-            transactions.append([date, transaction.type, transaction.cusip, transaction.size, transaction.name, transaction.asset, transaction.allocation])
+            transactions.append(
+                [
+                    date,
+                    transaction.type,
+                    transaction.cusip,
+                    transaction.size,
+                    transaction.name,
+                    transaction.asset,
+                    transaction.allocation,
+                ]
+            )
 
-        with self.output().open('w') as fh:
+        with self.output().open("w") as fh:
             writer = csv.writer(fh)
             writer.writerows(transactions)
 
     def output(self):
         end_date = os.path.basename(self.rhs_filepath)[0:8]
-        filepath = os.path.join(self.TRANSACTIONS_PATH, "{}-transactions.csv".format(end_date))
+        filepath = os.path.join(
+            self.TRANSACTIONS_PATH, "{}-transactions.csv".format(end_date)
+        )
         return luigi.LocalTarget(filepath)

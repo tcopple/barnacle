@@ -12,8 +12,17 @@ class Company(object):
         self.filings = filings
 
     def short_name(self):
-        shortened = self.name[0:10].lower().replace(" ", "").replace("/", "").replace("&", "").replace("(", "").replace(")", "").replace(".", "")
+        shortened = (
+            self.name[0:10]
+            .lower()
+            .replace(" ", "")
+            .replace("/", "")
+            .replace("&", "")
+            .replace("(", "")
+            .replace(")", "")
+            .replace(".", "")
+        )
         return str(self.sic) + "-" + shortened
 
     def __str__(self):
-        return(self.short_name())
+        return self.short_name()

@@ -3,3 +3,5 @@ gluish
 pandas
 jsonpickle
 xmltodict
+black
+isort

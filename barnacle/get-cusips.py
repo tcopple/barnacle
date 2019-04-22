@@ -13,7 +13,7 @@ from barnacle.helpers.logging_helpers import LoggingHelper
 from barnacle.services.openfigi_service import OpenFigiService
 
 ##ENTRY POINT
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     LoggingHelper.setup()
     log = logging.getLogger(__name__)
@@ -32,12 +32,12 @@ if __name__ == '__main__':
         cusips = frame["cusip"].unique()
 
         for cusip in cusips:
-            if(cusip in figis or cusip in figis_missing):
+            if cusip in figis or cusip in figis_missing:
                 continue
 
             log.info("Fetching Figi data for [{}]".format(cusip))
             response = OpenFigiService.get_figi(cusip)[0]
-            if("error" in response):
+            if "error" in response:
                 dat = jsonpickle.encode({}, unpicklable=False)
                 filepath = os.path.join(figis_missing_path, "{}.json".format(cusip))
             else:

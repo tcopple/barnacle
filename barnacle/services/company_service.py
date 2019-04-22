@@ -7,9 +7,9 @@ from barnacle.models.filing import Filing
 class CompanyService:
     @classmethod
     def make_from_filepath(cls, filepath):
-        #todo check if filepath exists, raise appropriate error
+        # todo check if filepath exists, raise appropriate error
         content = None
-        with open(filepath, 'r') as f:
+        with open(filepath, "r") as f:
             content = f.read()
 
         company_dict = jsonpickle.decode(content)
