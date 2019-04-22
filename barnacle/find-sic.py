@@ -1,8 +1,9 @@
-import urllib.request
 import csv
 import string
-from bs4 import BeautifulSoup
+import urllib.request
 from pprint import pprint
+
+from bs4 import BeautifulSoup
 
 ##ENTRY POINT
 if __name__ == '__main__':

@@ -1,6 +1,8 @@
 import jsonpickle
+
 from barnacle.models.company import Company
 from barnacle.models.filing import Filing
+
 
 class CompanyService:
     @classmethod

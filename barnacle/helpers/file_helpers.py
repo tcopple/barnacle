@@ -1,12 +1,13 @@
-import os
-import urllib
-import sys
-import shutil
-import logging
-import json
 import itertools
+import json
+import logging
+import os
+import shutil
+import sys
+import urllib
 
 from barnacle.config import BarnacleConfig
+
 
 class FileHelpers(object):
 

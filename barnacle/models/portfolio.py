@@ -8,4 +8,3 @@ class Portfolio(object):
 
     def aum(self):
         return sum(holding.value for holding in self.holdings)
-

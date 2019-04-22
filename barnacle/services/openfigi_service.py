@@ -1,7 +1,9 @@
 import json
-import requests
-import sys
 import logging
+import sys
+
+import requests
+
 
 class OpenFigiService(object):
     openfigi_url = 'https://api.openfigi.com/v1/mapping'

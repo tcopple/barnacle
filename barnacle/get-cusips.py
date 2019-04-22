@@ -1,14 +1,16 @@
 import json
-import time
-import requests
-import jsonpickle
-import sys
 import logging
-import pandas
 import os
-from barnacle.services.openfigi_service import OpenFigiService
+import sys
+import time
+
+import jsonpickle
+import pandas
+import requests
+
 from barnacle.helpers.file_helpers import FileHelpers
 from barnacle.helpers.logging_helpers import LoggingHelper
+from barnacle.services.openfigi_service import OpenFigiService
 
 ##ENTRY POINT
 if __name__ == '__main__':

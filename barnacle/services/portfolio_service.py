@@ -1,12 +1,15 @@
+import pprint
 import re
+from xml.etree import ElementTree
+
+import numpy
+import xmltodict
+
+from barnacle.helpers.file_helpers import FileHelpers
 from barnacle.models.holding import Holding
 from barnacle.models.portfolio import Portfolio
 from barnacle.models.transaction import Transaction
-from barnacle.helpers.file_helpers import FileHelpers
-from xml.etree import ElementTree
-import numpy
-import xmltodict
-import pprint
+
 
 def xml_to_dict(xml):
     d = xmltodict.parse(xml)

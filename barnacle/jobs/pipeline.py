@@ -1,38 +1,19 @@
-import os
-import urllib.request
-import os
 import csv
 import glob
-import pandas
-import luigi
-import jsonpickle
-from barnacle.models.portfolio import Portfolio
-from barnacle.helpers.file_helpers import FileHelpers
-from barnacle.services.portfolio_service import PortfolioService
-from barnacle.config import BarnacleConfig
-import luigi
-from luigi import LocalTarget
-from barnacle.helpers.file_helpers import FileHelpers
-from gluish import BaseTask, Executable, daily, random_string, shellout
-from barnacle.config import BarnacleConfig
-import os
-import urllib.request
-import glob
-import pandas
-import luigi
-from barnacle.helpers.file_helpers import FileHelpers
-from barnacle.config import BarnacleConfig
-import os
-import csv
-import glob
-import pandas
-import luigi
 import json
+import os
+import urllib.request
+
 import jsonpickle
-from barnacle.models.portfolio import Portfolio
-from barnacle.helpers.file_helpers import FileHelpers
-from barnacle.services.portfolio_service import PortfolioService
+import luigi
+import pandas
+from gluish import BaseTask, Executable, daily, random_string, shellout
+
 from barnacle.config import BarnacleConfig
+from barnacle.helpers.file_helpers import FileHelpers
+from barnacle.models.portfolio import Portfolio
+from barnacle.services.portfolio_service import PortfolioService
+
 
 ### 010
 class FetchSECIndex(BaseTask):
