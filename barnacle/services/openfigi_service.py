@@ -37,12 +37,14 @@ class OpenFigiService(object):
                 response.status_code, cusip, response.text
             )
         )
+
         if response.status_code != 200:
             OpenFigiService.log.info(
                 "Failed to fetch figi for {} status code [{}]".format(
                     cusip, response.status_code
                 )
             )
+
             return {}
 
         return response.json()

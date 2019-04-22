@@ -1,15 +1,16 @@
 class Company(object):
     @classmethod
     def from_hash(self, attrs):
-        name = attrs["company"] if "company" in attrs else attrs["name"]
+        name = attrs.get("company") or attrs.get("name")
         sic = str(int(attrs["sic"]))
         filings = []
+
         return Company(name, sic, filings)
 
-    def __init__(self, name, sic, filings):
+    def __init__(self, name, sic, filings=None):
         self.name = name
-        self.sic = str(int(sic))
-        self.filings = filings
+        self.sic = sic
+        self.filings = filings or []
 
     def short_name(self):
         shortened = (
@@ -22,6 +23,7 @@ class Company(object):
             .replace(")", "")
             .replace(".", "")
         )
+
         return str(self.sic) + "-" + shortened
 
     def __str__(self):

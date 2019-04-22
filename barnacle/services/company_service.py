@@ -16,7 +16,7 @@ class CompanyService:
         filings_json = company_dict["filings"]
         filings = []
         for filing_json in filings_json:
-            filings.append(Filing(filing_json))
+            filings.append(Filing(**filing_json))
 
         co = Company(company_dict["name"], company_dict["sic"], filings)
         return co
