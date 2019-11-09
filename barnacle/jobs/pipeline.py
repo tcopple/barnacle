@@ -3,39 +3,80 @@ import glob
 import json
 import os
 import urllib.request
+import itertools
 
 import jsonpickle
 import luigi
 import pandas
-from gluish import BaseTask, Executable, daily, random_string, shellout
+from os.path import join, basename, dirname
+from gluish import BaseTask
 
+from luigi.contrib.s3 import S3Target, S3Client, S3PathTask
 from barnacle.config import BarnacleConfig
 from barnacle.helpers.file_helpers import FileHelpers
 from barnacle.models.portfolio import Portfolio
 from barnacle.services.portfolio_service import PortfolioService
+from barnacle.jobs.core import FileOutputTask, S3OutputTask
+
+s3_client = (
+    S3Client(BarnacleConfig.S3_AWS_ACCESS_KEY, BarnacleConfig.S3_AWS_SECRET_KEY)
+    if hasattr(BarnacleConfig, "S3_BUCKET")
+    else None
+)
+
+
+def DelegatingTarget(path, *args, **kwargs):
+    if path.startswith("s3://"):
+        return S3Target(path, *args, client=s3_client, **kwargs)
+
+    return File(path, *args, **kwargs)
+
+
+def DelegatingFilePath(path, *args, **kwargs):
+    if path.startswith("s3://"):
+        file_list = s3_client.list(path)
+        return [S3OutputTask(join(path, fp), s3_client) for fp in file_list]
+
+    return [FileOutputTask(fp) for fp in glob.glob(join(path, "*"))]
 
 
 ### 010
-class FetchSECIndex(BaseTask):
-    URL_BASE = "https://www.sec.gov/Archives/edgar/full-index/"
+class FetchAllSECIndexes(luigi.WrapperTask):
+    start_year = luigi.Parameter(default=BarnacleConfig.START_YEAR)
+    end_year = luigi.Parameter(default=BarnacleConfig.END_YEAR)
+
+    def requires(self):
+        for year in range(int(self.start_year), int(self.end_year)):
+            yield FetchSECIndexForYear(year)
+
+
+class FetchSECIndexForYear(luigi.WrapperTask):
+    year = luigi.Parameter()
+
+    def requires(self):
+        for qtr in ["QTR1", "QTR2", "QTR3", "QTR4"]:
+            yield FetchSECIndex(self.year, qtr)
+
+
+class FetchSECIndex(luigi.Task):
+    URL_BASE = BarnacleConfig.SEC_URL_BASE
     FILINGS_PATH = BarnacleConfig.PATH_FILINGS
 
-    quarter = luigi.Parameter()
     year = luigi.Parameter()
+    quarter = luigi.Parameter()
 
     def requires(self):
         pass
 
     def run(self):
-        remote_path = "{}{}/{}/form.idx".format(self.URL_BASE, self.year, self.quarter)
+        remote_path = f"{self.URL_BASE}/{self.year}/{self.quarter}/form.idx"
         output = urllib.request.urlopen(remote_path).read().decode("utf-8")
         with self.output().open("w") as handle:
             print(output, file=handle)
 
     def output(self):
-        return luigi.LocalTarget(
-            "{}/{}{}.idx".format(self.FILINGS_PATH, self.year, self.quarter)
-        )
+        path = join(self.FILINGS_PATH, f"{self.year}{self.quarter}.idx")
+        return DelegatingTarget(path)
 
 
 ### 020
@@ -43,9 +84,17 @@ class ParseAllSECFilings(luigi.WrapperTask):
     raw_path = luigi.Parameter(default=BarnacleConfig.PATH_FILINGS)
 
     def requires(self):
-        files = glob.glob(os.path.join(self.raw_path, "*"))
-        for fh in files:
-            yield ParseSECFiling(fh)
+        # if lookup path is s3
+        if self.raw_path.startswith("s3://"):
+            files = s3_client.listdir(self.raw_path)
+            for fh in files:
+                yield ParseSECFiling(fh)
+
+        # if lookup path is local disk
+        else:
+            files = glob.glob(join(self.raw_path, "*"))
+            for fh in files:
+                yield ParseSECFiling(fh)
 
 
 class ParseSECFiling(luigi.Task):
@@ -54,7 +103,9 @@ class ParseSECFiling(luigi.Task):
 
     def run(self):
         csv_lines = [["form", "company", "sic", "date", "path"]]
-        with open(self.filepath, encoding="utf-8", errors="replace") as fh:
+
+        # TODO handle switch between s3 and local types better
+        with DelegatingTarget(self.filepath).open() as fh:
             lines_buffer = fh.readlines()
 
             # drop first 10 lines cause they're a constant header
@@ -72,15 +123,13 @@ class ParseSECFiling(luigi.Task):
             writer.writerows(csv_lines)
 
     def output(self):
-        output_name = FileHelpers.remove_extension(os.path.basename(self.filepath))
-        return luigi.LocalTarget("{}/{}.csv".format(self.CSVS_PATH, output_name))
+        output_name = FileHelpers.remove_extension(basename(self.filepath))
+        return DelegatingTarget(join(self.CSVS_PATH, f"{output_name}.csv"))
 
     def make_parser(self, fieldwidths):
         cuts = tuple(cut for cut in itertools.accumulate(abs(fw) for fw in fieldwidths))
         pads = tuple(fw < 0 for fw in fieldwidths)  # bool values for padding fields
-        flds = tuple(itertools.zip_longest(pads, (0,) + cuts, cuts))[
-            :-1
-        ]  # ignore final one
+        flds = tuple(itertools.zip_longest(pads, (0,) + cuts, cuts))[:-1]
         parser = lambda line: tuple(line[i:j] for pad, i, j in flds if not pad)
 
         # optional informational function attributes
@@ -94,19 +143,19 @@ class ParseSECFiling(luigi.Task):
 
 ### 030
 class DownloadFiling(luigi.ExternalTask):
-    local_path = luigi.Parameter()
-    remote_path = luigi.Parameter()
+    output_path = luigi.Parameter()
+    filing_path = luigi.Parameter()
 
     def requires(self):
         pass
 
     def run(self):
-        output = urllib.request.urlopen(self.remote_path).read().decode("utf-8")
+        output = urllib.request.urlopen(self.filing_path).read().decode("utf-8")
         with self.output().open("w") as handle:
             print(output, file=handle)
 
     def output(self):
-        return luigi.LocalTarget(self.local_path)
+        return DelegatingTarget(self.output_path)
 
 
 class DownloadFilings(luigi.Task):
@@ -118,8 +167,7 @@ class DownloadFilings(luigi.Task):
     company_name = luigi.Parameter(default="")
 
     def requires(self):
-        files = glob.glob(os.path.join(self.CSVS_PATH, "*"))
-        return [FileOutputTask(fp) for fp in files]
+        return DelegatingFilePath(self.CSVS_PATH)
 
     def run(self):
         frames = []
@@ -156,7 +204,7 @@ class DownloadFilings(luigi.Task):
                 .replace(".", "")
                 .replace(",", "")
             )
-            local_path = os.path.join(self.REPORTS_PATH, company_path, filename)
+            local_path = join(self.REPORTS_PATH, company_path, filename)
             remote_path = "https://www.sec.gov/Archives/{}".format(row["path"])
 
             yield DownloadFiling(local_path, remote_path)
@@ -172,7 +220,7 @@ class GenerateHoldings(luigi.WrapperTask):
     file_mask = luigi.Parameter(default="")
 
     def requires(self):
-        files = glob.glob(self.file_mask)
+        files = glob.glob(join(self.REPORTS_PATH, self.file_mask))
         for filepath in files:
             yield GenerateHolding(filepath)
 
@@ -193,7 +241,7 @@ class GenerateHolding(luigi.Task):
         with self.input().open("r") as in_file:
             holdings = in_file.read()
 
-        portfolio_lhs = Portfolio([])
+        portfolio_lhs = Portfolio(holdings=[])
         if holdings and PortfolioService.is_xml_representation(holdings):
             portfolio_holdings = PortfolioService.make_from_xml(holdings)
         elif holdings and PortfolioService.is_tabular_representation(holdings):

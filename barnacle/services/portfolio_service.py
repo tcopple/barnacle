@@ -21,7 +21,6 @@ class PortfolioService:
     @staticmethod
     def is_tabular_representation(table):
         match = re.findall("<table>(.*?)</table>", table, re.DOTALL | re.IGNORECASE)
-        return False
         return False if not match else True
 
     @staticmethod
@@ -33,10 +32,15 @@ class PortfolioService:
         if len(matches) < 2:
             return None
 
+        deets = xml_to_dict(matches[0].strip())
+        fi = deets.get('edgarSubmission', {}).get('headerData', {}).get('filerInfo', {})
+        period = fi.get('periodOfReport', None)
+        cik = fi.get('filer', {}).get('credentials', {}).get('cik', None)
+        name = deets.get('edgarSubmission', {}).get('formData', {}).get('coverPage', {}).get('filingManager', {}).get('name', None)
         portfolio = xml_to_dict(matches[1].strip())
         holdings_json = portfolio["informationTable"]["infoTable"]
-        holdings = [Holding(holding) for holding in holdings_json]
-        return Portfolio(holdings)
+        holdings = [Holding(**holding) for holding in holdings_json]
+        return Portfolio(name=name, cik=cik, holdings=holdings)
 
     @staticmethod
     def make_from_table(table):

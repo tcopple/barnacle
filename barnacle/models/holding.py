@@ -1,20 +1,20 @@
 class Holding(object):
-    def __init__(self, attrs):
-        self.issuer = attrs["nameOfIssuer"]
-        self.title_of_class = attrs["titleOfClass"]
-        self.cusip = attrs["cusip"]
-        self.value = float(attrs["value"]) * 1000
+    def __init__(self, **kwargs):
+        self.issuer = kwargs["nameOfIssuer"]
+        self.title_of_class = kwargs["titleOfClass"]
+        self.cusip = kwargs["cusip"]
+        self.value = float(kwargs["value"]) * 1000
         self.shares = (
-            float(attrs["shrsOrPrnAmt"]["sshPrnamt"])
-            if attrs["shrsOrPrnAmt"]["sshPrnamtType"] == "SH"
+            float(kwargs["shrsOrPrnAmt"]["sshPrnamt"])
+            if kwargs["shrsOrPrnAmt"]["sshPrnamtType"] == "SH"
             else None
         )
         self.principle = (
-            float(attrs["shrsOrPrnAmt"]["sshPrnamt"])
-            if attrs["shrsOrPrnAmt"]["sshPrnamtType"] == "PRN"
+            float(kwargs["shrsOrPrnAmt"]["sshPrnamt"])
+            if kwargs["shrsOrPrnAmt"]["sshPrnamtType"] == "PRN"
             else None
         )
-        self.option_type = attrs["putCall"] if "putCall" in attrs else None
+        self.option_type = kwargs["putCall"] if "putCall" in kwargs else None
 
     def allocation(self, ttl_functor):
         return self.value / ttl_functor()

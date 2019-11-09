@@ -4,15 +4,16 @@ import sys
 
 import requests
 
+from barnacle.config import BarnacleConfig
+
+LOG = logging.getLogger(__name__)
+
 
 class OpenFigiService(object):
-    openfigi_url = "https://api.openfigi.com/v1/mapping"
-    openfigi_apikey = "4a455c69-3894-4542-b1ad-4584f102b36b"
     openfigi_headers = {
         "Content-Type": "text/json",
-        "X-OPENFIGI-APIKEY": openfigi_apikey,
+        "X-OPENFIGI-APIKEY": BarnacleConfig.OPENFIGI_APIKEY,
     }
-    log = logging.getLogger(__name__)
 
     @staticmethod
     def get_figis(cusips):
@@ -27,7 +28,7 @@ class OpenFigiService(object):
         jobs = [{"idType": "ID_CUSIP", "idValue": cusip, "exchCode": "US"}]
 
         response = requests.post(
-            url=OpenFigiService.openfigi_url,
+            url=BarnacleConfig.OPENFIGI_URL,
             headers=OpenFigiService.openfigi_headers,
             data=json.dumps(jobs),
         )
@@ -48,3 +49,31 @@ class OpenFigiService(object):
             return {}
 
         return response.json()
+
+    @staticmethod
+    def get_figis(cusips):
+        jobs = [
+            {"idType": "ID_CUSIP", "idValue": cusip, "exchCode": "US"}
+            for cusip in cusips
+        ]
+
+        response = requests.post(
+            url=BarnacleConfig.OPENFIGI_URL,
+            headers=OpenFigiService.openfigi_headers,
+            data=json.dumps(jobs),
+        )
+
+        if response.status_code != 200:
+            LOG.info(
+                "Failed to fetch figis with status code [{}]".format(
+                    response.status_code
+                )
+            )
+
+            return {}
+
+        ret = []
+        for job, response in zip(jobs, response.json()):
+            ret.append({'cusip': job.get('idValue'), **response})
+
+        return ret

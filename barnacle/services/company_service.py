@@ -1,4 +1,5 @@
 import jsonpickle
+import os
 
 from barnacle.models.company import Company
 from barnacle.models.filing import Filing
@@ -7,7 +8,9 @@ from barnacle.models.filing import Filing
 class CompanyService:
     @classmethod
     def make_from_filepath(cls, filepath):
-        # todo check if filepath exists, raise appropriate error
+        if not os.path.exists(filepath):
+            raise ArgumentError(f"{filepath} does not exist.")
+
         content = None
         with open(filepath, "r") as f:
             content = f.read()

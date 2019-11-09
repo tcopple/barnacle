@@ -1,5 +1,7 @@
 class Portfolio(object):
-    def __init__(self, holdings):
+    def __init__(self, name=None, cik=None, holdings=None, **kwargs):
+        self.cik = cik
+        self.name = name
         self.holdings = holdings
         self.holdings_by_cusip = {holding.cusip: holding for holding in holdings}
 
