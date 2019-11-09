@@ -1,7 +1,8 @@
-Luigi==2.3.0
+luigi
 gluish
 pandas
 jsonpickle
 xmltodict
 black
 isort
+boto3
