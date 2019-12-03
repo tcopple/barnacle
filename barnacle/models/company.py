@@ -1,8 +1,8 @@
 class Company(object):
     @classmethod
-    def from_hash(self, attrs):
-        name = attrs.get("company") or attrs.get("name")
-        sic = str(int(attrs["sic"]))
+    def from_hash(self, sic, company, name):
+        name = company or name
+        sic = str(int(sic))
         filings = []
 
         return Company(name, sic, filings)
@@ -24,7 +24,7 @@ class Company(object):
             .replace(".", "")
         )
 
-        return str(self.sic) + "-" + shortened
+        return f"{self.sic}-{shortened}"
 
     def __str__(self):
         return self.short_name()

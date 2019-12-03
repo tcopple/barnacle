@@ -8,14 +8,4 @@ class Transaction(object):
         self.allocation = attrs["allocation"]
 
     def __str__(self):
-        return (
-            self.type
-            + ","
-            + str(self.size)
-            + ","
-            + self.cusip
-            + ","
-            + self.name
-            + ","
-            + self.asset
-        )
+        return f"{self.type},{self.size},{self.cusip},{self.name},{self.asset}"

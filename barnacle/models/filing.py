@@ -6,4 +6,4 @@ class Filing(object):
         self.file = file
 
     def __str__(self):
-        return "{}, {}, {}".format(self.type, self.date, self.quarter)
+        return f"{self.type}, {self.date}, {self.quarter}"
