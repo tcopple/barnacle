@@ -1,5 +1,6 @@
-import jsonpickle
 import os
+
+import jsonpickle
 
 from barnacle.models.company import Company
 from barnacle.models.filing import Filing

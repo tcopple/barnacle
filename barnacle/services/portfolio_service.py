@@ -1,12 +1,10 @@
-import pprint
 import re
-from xml.etree import ElementTree
 
 import numpy
 import xmltodict
 
-from barnacle.helpers.file_helpers import FileHelpers
 from barnacle.helpers.etc import xml_to_dict
+from barnacle.helpers.file_helpers import FileHelpers
 from barnacle.models.holding import Holding
 from barnacle.models.portfolio import Portfolio
 from barnacle.models.transaction import Transaction
@@ -33,10 +31,16 @@ class PortfolioService:
             return None
 
         deets = xml_to_dict(matches[0].strip())
-        fi = deets.get('edgarSubmission', {}).get('headerData', {}).get('filerInfo', {})
-        period = fi.get('periodOfReport', None)
-        cik = fi.get('filer', {}).get('credentials', {}).get('cik', None)
-        name = deets.get('edgarSubmission', {}).get('formData', {}).get('coverPage', {}).get('filingManager', {}).get('name', None)
+        fi = deets.get("edgarSubmission", {}).get("headerData", {}).get("filerInfo", {})
+        fi.get("periodOfReport", None)
+        cik = fi.get("filer", {}).get("credentials", {}).get("cik", None)
+        name = (
+            deets.get("edgarSubmission", {})
+            .get("formData", {})
+            .get("coverPage", {})
+            .get("filingManager", {})
+            .get("name", None)
+        )
         portfolio = xml_to_dict(matches[1].strip())
         holdings_json = portfolio["informationTable"]["infoTable"]
         holdings = [Holding(**holding) for holding in holdings_json]
@@ -68,7 +72,6 @@ class PortfolioService:
             fields = [field.strip(" ") for field in parser(line)]
             #  fields = [field for field in parser(line)]
             print(fields)
-
 
         return Portfolio(holdings)
 

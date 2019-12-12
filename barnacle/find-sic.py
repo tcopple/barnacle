@@ -1,7 +1,6 @@
 import csv
 import string
 import urllib.request
-from pprint import pprint
 
 from bs4 import BeautifulSoup
 

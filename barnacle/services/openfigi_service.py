@@ -1,6 +1,5 @@
 import json
 import logging
-import sys
 
 import requests
 
@@ -74,6 +73,6 @@ class OpenFigiService(object):
 
         ret = []
         for job, response in zip(jobs, response.json()):
-            ret.append({'cusip': job.get('idValue'), **response})
+            ret.append({"cusip": job.get("idValue"), **response})
 
         return ret

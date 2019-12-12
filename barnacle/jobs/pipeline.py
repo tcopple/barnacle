@@ -1,22 +1,21 @@
 import csv
 import glob
-import json
-import os
-import urllib.request
 import itertools
+import json
+import urllib.request
+from os.path import basename, dirname, join
 
 import jsonpickle
 import luigi
 import pandas
-from os.path import join, basename, dirname
 from gluish import BaseTask
+from luigi.contrib.s3 import S3Client, S3PathTask, S3Target
 
-from luigi.contrib.s3 import S3Target, S3Client, S3PathTask
 from barnacle.config import BarnacleConfig
 from barnacle.helpers.file_helpers import FileHelpers
+from barnacle.jobs.core import FileOutputTask, S3OutputTask
 from barnacle.models.portfolio import Portfolio
 from barnacle.services.portfolio_service import PortfolioService
-from barnacle.jobs.core import FileOutputTask, S3OutputTask
 
 s3_client = (
     S3Client(BarnacleConfig.S3_AWS_ACCESS_KEY, BarnacleConfig.S3_AWS_SECRET_KEY)
@@ -38,6 +37,7 @@ def DelegatingFilePath(path, *args, **kwargs):
         return [S3OutputTask(join(path, fp), s3_client) for fp in file_list]
 
     return [FileOutputTask(fp) for fp in glob.glob(join(path, "*"))]
+
 
 def DelegatingFile(filepath):
     if filepath.startswith("s3://"):
@@ -239,7 +239,7 @@ class GenerateHolding(luigi.Task):
     input_file = luigi.Parameter(default="")
 
     def requires(self):
-        #TODO should be file or s3
+        # TODO should be file or s3
         print(self.input_file)
         return S3OutputTask(self.input_file)
 
@@ -286,8 +286,12 @@ class GenerateAllTransactions(luigi.WrapperTask):
     file_path = luigi.Parameter(default="")
 
     def requires(self):
-        file_list = [join(self.file_path, fp) for fp in list(s3_client.list(self.file_path))]
-        filing_combinations = [(None, file_list[0])] + list(zip(file_list[0:-1], file_list[1:]))
+        file_list = [
+            join(self.file_path, fp) for fp in list(s3_client.list(self.file_path))
+        ]
+        filing_combinations = [(None, file_list[0])] + list(
+            zip(file_list[0:-1], file_list[1:])
+        )
 
         for fc in filing_combinations:
             yield GenerateTransactions(fc[0], fc[1])
