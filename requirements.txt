@@ -1,8 +1,12 @@
+pre-commit
+black
+isort
+clean_ipynb
+autoflake
+
 luigi
 gluish
 pandas
 jsonpickle
 xmltodict
-black
-isort
 boto3
