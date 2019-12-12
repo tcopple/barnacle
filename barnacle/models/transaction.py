@@ -9,3 +9,6 @@ class Transaction(object):
 
     def __str__(self):
         return f"{self.type},{self.size},{self.cusip},{self.name},{self.asset}"
+
+    def __repr__(self):
+        return f"{self.type},{self.size},{self.cusip},{self.name},{self.asset}"
