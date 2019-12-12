@@ -29,7 +29,7 @@ def DelegatingTarget(path, *args, **kwargs):
     if path.startswith("s3://"):
         return S3Target(path, *args, client=s3_client, **kwargs)
 
-    return File(path, *args, **kwargs)
+    return luigi.local_target.LocalTarget(path, *args, **kwargs)
 
 
 def DelegatingFilePath(path, *args, **kwargs):
@@ -38,6 +38,12 @@ def DelegatingFilePath(path, *args, **kwargs):
         return [S3OutputTask(join(path, fp), s3_client) for fp in file_list]
 
     return [FileOutputTask(fp) for fp in glob.glob(join(path, "*"))]
+
+def DelegatingFile(filepath):
+    if filepath.startswith("s3://"):
+        return S3OutputTask(filepath, s3_client)
+
+    return FileOutputTask(filepath)
 
 
 ### 010
@@ -217,12 +223,13 @@ class DownloadFilings(luigi.Task):
 class GenerateHoldings(luigi.WrapperTask):
     REPORTS_PATH = BarnacleConfig.PATH_COMPANY_REPORTS
     TRANSACTIONS_PATH = BarnacleConfig.PATH_COMPANY_HOLDINGS
+
     file_mask = luigi.Parameter(default="")
 
     def requires(self):
-        files = glob.glob(join(self.REPORTS_PATH, self.file_mask))
-        for filepath in files:
-            yield GenerateHolding(filepath)
+        output_tasks = DelegatingFilePath(self.file_mask)
+        for task in output_tasks:
+            yield GenerateHolding(task.s3_filepath)
 
 
 class GenerateHolding(luigi.Task):
@@ -232,12 +239,15 @@ class GenerateHolding(luigi.Task):
     input_file = luigi.Parameter(default="")
 
     def requires(self):
-        return FileOutputTask(self.input_file)
+        #TODO should be file or s3
+        print(self.input_file)
+        return S3OutputTask(self.input_file)
 
     def run(self):
         transactions = [
             ["date", "type", "cusip", "size", "name", "asset", "allocation"]
         ]
+
         with self.input().open("r") as in_file:
             holdings = in_file.read()
 
@@ -247,19 +257,25 @@ class GenerateHolding(luigi.Task):
         elif holdings and PortfolioService.is_tabular_representation(holdings):
             portfolio_holdings = PortfolioService.make_from_table(holdings)
 
+        if portfolio_holdings is None or len(portfolio_holdings) == 0:
+            raise Exception("No holdings available.")
+
         data = jsonpickle.encode(portfolio_holdings)
         with self.output().open("w") as fh:
             fh.write(json.dumps(json.loads(data), indent=4))
 
     def output(self):
-        output_date = os.path.basename(self.input_file)[0:8]
-        output_filename = "{}.holdings.json".format(output_date)
-        output_filepath = os.path.dirname(self.input_file).replace(
-            self.REPORTS_PATH, self.TRANSACTIONS_PATH
+        date_prefix = basename(self.input_file)[0:8]
+        path_prefix = dirname(self.input_file)
+
+        output_filename = f"{date_prefix}.holdings.json"
+
+        output_filepath = path_prefix.replace(
+            dirname(path_prefix), self.TRANSACTIONS_PATH
         )
 
-        transaction_filepath = os.path.join(output_filepath, output_filename)
-        return luigi.LocalTarget(transaction_filepath)
+        transaction_filepath = join(output_filepath, output_filename)
+        return DelegatingTarget(transaction_filepath)
 
 
 # 050
@@ -267,23 +283,29 @@ class GenerateAllTransactions(luigi.WrapperTask):
     REPORTS_PATH = BarnacleConfig.PATH_COMPANY_REPORTS
     TRANSACTIONS_PATH = BarnacleConfig.PATH_TRANSACTIONS
 
+    file_path = luigi.Parameter(default="")
+
     def requires(self):
-        # filing_combinations = [(None, self.input()[0])] + list(zip(self.input()[0:-1], self.input()[1:]))
-        pass
+        file_list = [join(self.file_path, fp) for fp in list(s3_client.list(self.file_path))]
+        filing_combinations = [(None, file_list[0])] + list(zip(file_list[0:-1], file_list[1:]))
+
+        for fc in filing_combinations:
+            yield GenerateTransactions(fc[0], fc[1])
 
 
 class GenerateTransactions(luigi.Task):
     TRANSACTIONS_PATH = BarnacleConfig.PATH_TRANSACTIONS
-    lhs_filepath = luigi.Parameter(default="")
-    rhs_filepath = luigi.Parameter(default="")
+    lhs = luigi.Parameter(default="")
+    rhs = luigi.Parameter(default="")
 
     def requires(self):
-        return [FileOutputTask(self.lhs_filepath), FileOutputTask(self.rhs_filepath)]
+        return [DelegatingFile(self.lhs), DelegatingFile(self.rhs)]
 
     def run(self):
         transactions = [
             ["date", "type", "cusip", "size", "name", "asset", "allocation"]
         ]
+
         lhs_filepath = self.input()[0]
         rhs_filepath = self.input()[1]
 
@@ -297,7 +319,7 @@ class GenerateTransactions(luigi.Task):
         holdings_rhs = jsonpickle.decode(rhs_json)
 
         for transaction in PortfolioService.transform(holdings_lhs, holdings_rhs):
-            date = os.path.basename(rhs_filepath.fn)[0:8]
+            date = basename(rhs_filepath.path)[0:8]
             transactions.append(
                 [
                     date,
@@ -315,8 +337,10 @@ class GenerateTransactions(luigi.Task):
             writer.writerows(transactions)
 
     def output(self):
-        end_date = os.path.basename(self.rhs_filepath)[0:8]
-        filepath = os.path.join(
-            self.TRANSACTIONS_PATH, "{}-transactions.csv".format(end_date)
+        end_date = basename(self.rhs)[0:8]
+        dir_name = basename(dirname(self.rhs))
+        filepath = join(
+            self.TRANSACTIONS_PATH, dir_name, f"{end_date}-transactions.csv"
         )
-        return luigi.LocalTarget(filepath)
+
+        return DelegatingTarget(filepath)
