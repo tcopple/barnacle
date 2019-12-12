@@ -1,0 +1,33 @@
+repos:
+-   repo: local
+    hooks:
+    - id: isort
+      language_version: python
+      name: isort
+      language: system
+      entry: isort
+      types: [python]
+      stages: [push]
+      files: ^wonderland/
+    - id: black
+      language_version: python
+      name: black
+      language: system
+      entry: black
+      types: [python]
+      stages: [push]
+      files: ^wonderland/
+    - id: clean_ipynb
+      language_version: python
+      name: clean_ipynb
+      language: system
+      entry: clean_ipynb
+      stages: [push]
+      files: \.ipynb$
+    - id: remove-unused
+      language_version: python
+      name: remove-unused
+      language: system
+      entry: autoflake --in-place --remove-unused-variables
+      stages: [push]
+      files: ^wonderland/
