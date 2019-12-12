@@ -44,23 +44,32 @@ class PortfolioService:
 
     @staticmethod
     def make_from_table(table):
+        raise Exception("Not implemented.")
+
+        # this is a rough implementation it needs to be tested across a variety of the tabular file formats
         match = re.findall(
-            "(?:<S>\s+)(?:<C>\s+)*(.*)</TABLE>", table, re.DOTALL | re.IGNORECASE
+            "(?:<TABLE>\s+)(?:<C>\s+)*(.*)</TABLE>", table, re.DOTALL | re.IGNORECASE
         )
+
         if not match:
             return None
 
         holdings = []
-        fieldwidths = (32, 18, 14, 14, 8, 10, 9, 8, 9)
+        #  fieldwidths = (32, 18, 14, 14, 8, 10, 9, 8, 9)
+        fieldwidths = (31, 17, 9, 9, 9, 3, 7, 20, 9, 8, 8)
         lines = [s for s in match[0].splitlines()]
-        parsed = numpy.loadtxt(lines, dtype="str")
-        sys.exit(1)
+        lines.pop(0)
+        lines.pop(0)
+        lines.pop(0)
+        lines.pop(0)
+
         for line in lines:
             parser = FileHelpers.make_fixed_width_parser(fieldwidths)
             fields = [field.strip(" ") for field in parser(line)]
+            #  fields = [field for field in parser(line)]
             print(fields)
 
-        sys.exit(1)
+
         return Portfolio(holdings)
 
     @staticmethod
