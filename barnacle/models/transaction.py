@@ -11,4 +11,4 @@ class Transaction(object):
         return f"{self.type},{self.size},{self.cusip},{self.name},{self.asset}"
 
     def __repr__(self):
-        return f"{self.type},{self.size},{self.cusip},{self.name},{self.asset}"
+        return f"TRANSACTION([type:{self.type}], [size:{self.size}], [cusip:{self.cusip}], [name:{self.name}], [asset:{self.asset}])"
