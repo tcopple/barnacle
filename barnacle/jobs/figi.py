@@ -5,7 +5,6 @@ import requests
 
 from barnacle.config import BarnacleConfig
 from barnacle.helpers.file_helpers import FileHelpers
-from barnacle.helpers.logging_helpers import LoggingHelper
 from barnacle.services.openfigi_service import OpenFigiService
 
 
