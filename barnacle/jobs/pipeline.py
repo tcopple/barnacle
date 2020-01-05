@@ -12,10 +12,10 @@ from gluish import BaseTask
 from luigi.contrib.s3 import S3Client, S3PathTask, S3Target
 
 from barnacle.config import BarnacleConfig
-from barnacle.helpers.file_helpers import FileHelpers
+from barnacle.helpers.file import FileHelpers
 from barnacle.jobs.core import FileOutputTask, S3OutputTask
 from barnacle.models.portfolio import Portfolio
-from barnacle.services.portfolio_service import PortfolioService
+from barnacle.services.portfolio import PortfolioService
 
 s3_client = (
     S3Client(BarnacleConfig.S3_AWS_ACCESS_KEY, BarnacleConfig.S3_AWS_SECRET_KEY)

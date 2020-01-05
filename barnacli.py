@@ -64,8 +64,8 @@ def get_cusips():
     import pandas
     import requests
 
-    from barnacle.helpers.file_helpers import FileHelpers
-    from barnacle.services.openfigi_service import OpenFigiService
+    from barnacle.helpers.file import FileHelpers
+    from barnacle.services.openfigi import OpenFigiService
 
     transactions_path = FileHelpers.CONFIG["PATH_TRANSACTIONS"]
     figis_path = FileHelpers.CONFIG["PATH_FIGI_DETAILS"]

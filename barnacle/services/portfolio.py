@@ -4,7 +4,7 @@ import numpy
 import xmltodict
 
 from barnacle.helpers.etc import xml_to_dict
-from barnacle.helpers.file_helpers import FileHelpers
+from barnacle.helpers.file import FileHelpers
 from barnacle.models.holding import Holding
 from barnacle.models.portfolio import Portfolio
 from barnacle.models.transaction import Transaction

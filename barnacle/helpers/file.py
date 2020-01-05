@@ -5,7 +5,6 @@ import shutil
 import urllib
 
 from typing import Callable, List
-from barnacle.config import BarnacleConfig
 
 LOG = logging.getLogger(__name__)
 
