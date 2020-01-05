@@ -31,6 +31,4 @@ class BarnacleConfig:
     END_YEAR = os.environ.get("BARNACLE_ENDYR") or 2016
 
     OPENFIGI_URL = "https://api.openfigi.com/v1/mapping"
-    OPENFIGI_APIKEY = "4a455c69-3894-4542-b1ad-4584f102b36b"
-
     SEC_URL_BASE = "https://www.sec.gov/Archives/edgar/full-index"
