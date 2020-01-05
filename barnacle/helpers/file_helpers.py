@@ -4,22 +4,22 @@ import os
 import shutil
 import urllib
 
+from typing import Callable, List
 from barnacle.config import BarnacleConfig
+
+LOG = logging.getLogger(__name__)
 
 
 class FileHelpers(object):
-
-    log = logging.getLogger(__name__)
-    CONFIG = BarnacleConfig
-
     @classmethod
-    def download_file(cls, remote_path, local_path):
-        cls.log.info("Downloading file from [%s] to [%s]", remote_path, local_path)
+    def download_file(cls, remote_path: str, local_path: str) -> None:
+        LOG.info(f"Downloading file from [{remote_path}] to [{local_path}].")
+
         # if directory of local path does not exist, create it
         path = os.path.dirname(local_path)
 
         if not os.path.exists(path):
-            cls.log.info("Making directory [%s]", path)
+            LOG.info(f"Making directory [{path}]")
             os.makedirs(path)
 
         # fetch remote file storying it piecewise to local file
@@ -28,31 +28,30 @@ class FileHelpers(object):
         ) as local:
             shutil.copyfileobj(response, local)
 
-        cls.log.info("Success...")
+    @classmethod
+    def change_file_extension(cls, filepath: str, new_suffix: str) -> str:
+        base_filepath = os.path.splitext(filepath)[0].lower()
+        return f"{filepath_no_ext}.{new_suffix}"
 
     @classmethod
-    def change_file_extension(cls, filepath, new_suffix):
-        filepath_no_ext = os.path.splitext(filepath)[0].lower()
-        ret = "{}.{}".format(filepath_no_ext, new_suffix)
-
-        return ret
-
-    @classmethod
-    def try_make_directory(cls, path):
+    def try_make_directory(cls, path: str) -> bool:
         if not os.path.exists(path):
             os.makedirs(path)
+            return True
+
+        return False
 
     @classmethod
-    def try_make_directory_for_file(cls, filepath):
+    def try_make_directory_for_file(cls, filepath: str) -> bool:
         path = os.path.dirname(filepath)
-        cls.try_make_directory(path)
+        return cls.try_make_directory(path)
 
     @classmethod
-    def files_in_directory_with_path(cls, d):
-        return [os.path.join(d, f) for f in os.listdir(d)]
+    def files_in_directory_with_path(cls, path: str) -> List[str]:
+        return [os.path.join(path, f) for f in os.listdir(path)]
 
     @classmethod
-    def make_fixed_width_parser(cls, fieldwidths):
+    def make_fixed_width_parser(cls, fieldwidths: str) -> Callable:
         cuts = tuple(cut for cut in itertools.accumulate(abs(fw) for fw in fieldwidths))
         pads = tuple(fw < 0 for fw in fieldwidths)  # bool values for padding fields
         flds = tuple(itertools.zip_longest(pads, (0,) + cuts, cuts))[
@@ -69,5 +68,6 @@ class FileHelpers(object):
         return parser
 
     @classmethod
-    def remove_extension(cls, filename):
-        return os.path.splitext(filename)[0]
+    def remove_extension(cls, filepath: str) -> str:
+        filepath, ext =  os.path.splitext(filename)
+        return filename
