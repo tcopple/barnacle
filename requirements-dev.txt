@@ -5,3 +5,4 @@ isort
 clean_ipynb
 autoflake
 mypy
+pytest-cov
